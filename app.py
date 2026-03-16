@@ -1,5 +1,5 @@
 import streamlit as st
-import tensorflow as tf
+import keras
 import numpy as np
 from PIL import Image
 import json
@@ -85,7 +85,7 @@ def load_resources():
         with st.spinner('Downloading model... (first time only, ~25MB)'):
             url = f'https://drive.google.com/uc?id={FILE_ID}'
             gdown.download(url, MODEL_PATH, quiet=False)
-    model = tf.keras.models.load_model(MODEL_PATH)
+    model = keras.models.load_model(MODEL_PATH)
     with open('class_names.json', 'r') as f:
         class_names = json.load(f)
     return model, class_names
