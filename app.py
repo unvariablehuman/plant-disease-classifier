@@ -20,11 +20,11 @@ DISEASE_INFO = {
     "Pepper bell healthy": {"desc": "Your plant looks healthy!", "treatment": "Maintain watering and sunlight.", "severity": "None"},
     "Potato Early blight": {"desc": "Fungal disease causing brown concentric ring spots.", "treatment": "Apply fungicides like chlorothalonil.", "severity": "Medium"},
     "Potato Late blight": {"desc": "Severe fungal disease capable of destroying crops.", "treatment": "Apply systemic fungicides immediately.", "severity": "High"},
-    "Potato healthy": {"desc": "The plant shows no visible disease symptoms.", "treatment": "Continue good care practices.", "severity": "None"},
+    "Potato healthy": {"desc": "The plant shows no visible disease symptoms.", "treatment": "Continue good care.", "severity": "None"},
     "Tomato Bacterial spot": {"desc": "Small dark water-soaked spots on leaves.", "treatment": "Apply copper sprays.", "severity": "Medium"},
     "Tomato Early blight": {"desc": "Brown spots with target-like rings.", "treatment": "Remove infected leaves.", "severity": "Medium"},
     "Tomato Late blight": {"desc": "Dark lesions with white mold underneath.", "treatment": "Apply fungicide immediately.", "severity": "High"},
-    "Tomato Leaf Mold": {"desc": "Yellow patches with olive mold underneath.", "treatment": "Reduce humidity.", "severity": "Medium"},
+    "Tomato Leaf Mold": {"desc": "Yellow patches with olive mold.", "treatment": "Reduce humidity.", "severity": "Medium"},
     "Tomato Septoria leaf spot": {"desc": "Small circular spots with dark edges.", "treatment": "Remove infected leaves.", "severity": "Medium"},
     "Tomato Spider mites Two spotted spider mite": {"desc": "Tiny mites causing yellowing and webbing.", "treatment": "Apply neem oil.", "severity": "Medium"},
     "Tomato Target Spot": {"desc": "Fungal disease causing concentric rings.", "treatment": "Improve airflow.", "severity": "Medium"},
@@ -40,18 +40,32 @@ SEVERITY_COLOR = {"None": "#16a34a", "Medium": "#f59e0b", "High": "#ef4444"}
 # ─────────────────────────────────────────
 def predict(img):
     if img is None:
-        return "<div class='diagnosis-card' style='display:flex; align-items:center; justify-content:center; opacity:0.6;'>Upload a leaf image to start</div>"
-
+        return "<div class='diagnosis-card' style='display:flex; align-items:center; justify-content:center; opacity:0.6;'>Upload a leaf image and click Analyze</div>"
+    
     img_res = Image.fromarray(img).convert("RGB").resize((224, 224))
-    arr = np.expand_dims(np.array(img_res) / 255.0, axis=0)
+    arr = np.expand_dims(np.array(img_res, dtype=np.float32), axis=0)
+    
     preds = model.predict(arr, verbose=0)[0]
     top3_idx = preds.argsort()[-3:][::-1]
-
-    top_name = class_names[top3_idx[0]].replace("_", " ")
+    
+    # Ambil nama asli dari class_names (biasanya pakai underscore)
+    raw_name = class_names[top3_idx[0]]
+    # Ubah ke format yang ramah dibaca (untuk display)
+    display_name = raw_name.replace("_", " ")
+    
     confidence = preds[top3_idx[0]] * 100
-    info = DISEASE_INFO.get(top_name, {"desc": "N/A", "treatment": "N/A", "severity": "Medium"})
-    color = SEVERITY_COLOR[info["severity"]]
+    
+    # LOGIC FIX: Cari dengan nama display, jika gagal cari dengan nama asli
+    info = DISEASE_INFO.get(display_name.strip())
+    if not info:
+        info = DISEASE_INFO.get(raw_name)
+    
+    # Jika masih tidak ketemu (antisipasi typo di kamus), berikan info default
+    if not info:
+        info = {"desc": "No detailed description available for this species.", "treatment": "Consult a local agricultural expert.", "severity": "Medium"}
 
+    color = SEVERITY_COLOR.get(info["severity"], "#9ca3af")
+    
     bars = ""
     for idx in top3_idx:
         name = class_names[idx].replace("_", " ")
@@ -69,7 +83,7 @@ def predict(img):
     return f"""
     <div class="diagnosis-card">
         <h3 style="margin:0 0 5px 0;font-size:11px;text-transform:uppercase;opacity:0.6;">Diagnosis</h3>
-        <div style="font-size:22px;font-weight:800;margin-bottom:5px;">{top_name}</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:5px;">{display_name}</div>
         <div style="font-size:14px;margin-bottom:12px;opacity:0.8;">Confidence: <b>{confidence:.1f}%</b></div>
         <div style="background:{color}33;color:{color};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;margin-bottom:15px;display:inline-block;">
             Severity: {info["severity"]}
@@ -85,10 +99,11 @@ def predict(img):
     </div>"""
 
 # ─────────────────────────────────────────
-# 4. Custom CSS (Strict Fix for Scrollbars)
+# 4. Custom CSS
 # ─────────────────────────────────────────
 custom_css = """
-/* Sembunyikan semua scrollbar melayang yang muncul di HuggingFace/Gradio */
+.statustext, .show-api { display: none !important; }
+.image-container .controls { justify-content: flex-end !important; padding-bottom: 10px !important; }
 ::-webkit-scrollbar { display: none !important; }
 * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
 .diagnosis-card {
@@ -99,8 +114,6 @@ custom_css = """
     color: var(--body-text-color);
     min-height: 410px;
 }
-/* Hilangkan padding ekstra yang sering memicu scrollbar melayang */
-.gradio-container { padding: 0 !important; }
 """
 
 # ─────────────────────────────────────────
@@ -114,21 +127,17 @@ theme = gr.themes.Soft(
 
 with gr.Blocks(theme=theme, css=custom_css, title="PlantWise AI") as demo:
     gr.Markdown("# 🌿 PlantWise AI\n### Deep Learning Plant Disease Detection")
-
     with gr.Row(equal_height=True):
         with gr.Column(scale=1):
-            image_input = gr.Image(label="Upload Leaf Image", type="numpy", height=350)
-            analyze_btn = gr.Button("Analyze Plant 🌱", variant="primary")
-            
+            image_input = gr.Image(label="Upload Leaf Image", type="numpy", height=350, elem_classes="image-container")
+            analyze_btn = gr.Button("Analyze Plant 🌿", variant="primary")
         with gr.Column(scale=1):
             result_output = gr.HTML(
-                "<div class='diagnosis-card' style='display:flex; align-items:center; justify-content:center; opacity:0.5;'>Upload a leaf image to start</div>"
+                "<div class='diagnosis-card' style='display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.5; text-align:center;'>"
+                "<img src='https://cdn-icons-png.flaticon.com/512/628/628283.png' width='50' style='margin-bottom:10px; filter: grayscale(1);'>"
+                "Upload a leaf image and click Analyze<br><small>Supports Pepper, Potato, and Tomato leaves</small></div>"
             )
-
-    # ─────────────────────────────────────────
-    # LOGIC FIX: Cuma jalan pas di-klik tombol
-    # ─────────────────────────────────────────
     analyze_btn.click(predict, inputs=image_input, outputs=result_output)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch()
