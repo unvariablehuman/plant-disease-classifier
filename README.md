@@ -1,17 +1,20 @@
-# 🌿 Plant Disease Classifier
+# 🌿 PlantWise AI — Plant Disease Classifier
 
-A deep learning web application for detecting plant diseases from leaf images, built with MobileNetV2 and deployed using Streamlit.
+A deep learning web application for detecting plant diseases from leaf images, built with MobileNetV2 and deployed on Hugging Face Spaces using Gradio.
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-FF6F00?style=flat&logo=tensorflow&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.32-FF4B4B?style=flat&logo=streamlit&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat&logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.21-FF6F00?style=flat&logo=tensorflow&logoColor=white)
+![Gradio](https://img.shields.io/badge/Gradio-Latest-F97316?style=flat&logo=gradio&logoColor=white)
 ![Accuracy](https://img.shields.io/badge/Accuracy-96%25-4ade80?style=flat)
+![HuggingFace](https://img.shields.io/badge/Demo-HuggingFace%20Spaces-FFD21E?style=flat&logo=huggingface&logoColor=black)
+
+🔗 **Live Demo:** [huggingface.co/spaces/unvariablehuman/plantwise-ai](https://huggingface.co/spaces/unvariablehuman/plantwise-ai)
 
 ---
 
 ## 📋 Overview
 
-This application classifies plant leaf images into 15 categories — healthy or diseased — using a fine-tuned MobileNetV2 model trained on the PlantVillage dataset.
+PlantWise AI classifies plant leaf images into 15 categories — healthy or diseased — using a fine-tuned MobileNetV2 model trained on the PlantVillage dataset. The app provides diagnosis, confidence scores, disease description, and treatment recommendations.
 
 **Supported Plants:** Pepper (Bell), Potato, Tomato
 
@@ -64,16 +67,13 @@ Dense(15, Softmax)
 ### Training Strategy
 
 **Phase 1 — Feature Extraction**
-- Base model frozen
-- Only classification head trained
+- Base model frozen, only classification head trained
 - Learning rate: `0.001`
-- Epochs: up to 50 (EarlyStopping patience=10)
 - Best Val Accuracy: **90.33%**
 
 **Phase 2 — Fine-Tuning**
 - First 100 layers frozen, remaining 54 unfrozen
 - Learning rate: `0.00001`
-- Epochs: up to 50 (EarlyStopping patience=10)
 - Best Val Accuracy: **96.10%** ✅
 
 ---
@@ -87,8 +87,7 @@ Dense(15, Softmax)
 | Macro Avg Recall | 96% |
 | Macro Avg F1-Score | 96% |
 
-### Per-Class Performance
-Most classes achieve **>90% recall**. The two lowest:
+**Per-Class Performance:** 13/15 classes above 90% recall. Two lowest:
 - `Tomato Early Blight`: 83% — visually similar to Target Spot
 - `Tomato Spider Mites`: 87% — visually similar to other spot diseases
 
@@ -96,20 +95,11 @@ Most classes achieve **>90% recall**. The two lowest:
 
 ## 🚀 Run Locally
 
-**1. Clone the repo**
 ```bash
-git clone https://github.com/YOUR_USERNAME/plant-disease-classifier.git
+git clone https://github.com/unvariablehuman/plant-disease-classifier.git
 cd plant-disease-classifier
-```
-
-**2. Install dependencies**
-```bash
 pip install -r requirements.txt
-```
-
-**3. Run the app**
-```bash
-streamlit run app.py
+python app.py
 ```
 
 ---
@@ -119,7 +109,7 @@ streamlit run app.py
 ```
 plant-disease-classifier/
 │
-├── app.py                      # Streamlit web app
+├── app.py                      # Gradio web app
 ├── requirements.txt            # Python dependencies
 ├── best_model_phase2.keras     # Trained model (96% accuracy)
 ├── class_names.json            # Class label mapping
@@ -132,8 +122,8 @@ plant-disease-classifier/
 
 **PlantVillage Dataset**
 - Total images: 20,669
-- Training set: 80% (16,541 images)
-- Validation set: 20% (4,128 images)
+- Training: 80% (16,541 images)
+- Validation: 20% (4,128 images)
 - Image size: 224×224 pixels
 
 ---
@@ -142,7 +132,8 @@ plant-disease-classifier/
 
 - **Model:** TensorFlow / Keras
 - **Base Model:** MobileNetV2 (ImageNet pretrained)
-- **Web App:** Streamlit
+- **Web App:** Gradio
+- **Deployment:** Hugging Face Spaces
 - **Training:** Google Colab (GPU T4)
 - **Dataset:** PlantVillage
 
@@ -150,9 +141,9 @@ plant-disease-classifier/
 
 ## 📝 Notes
 
-- Input images should be clear photos of plant leaves
-- Best results with well-lit, single-leaf images
-- Model accepts JPG, JPEG, PNG formats
+- Use clear, close-up photos of single leaves for best results
+- Best with well-lit images, avoid shadows
+- Accepts JPG, JPEG, PNG formats
 
 ---
 
